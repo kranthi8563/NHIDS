@@ -1,0 +1,56 @@
+#Product Recommend System (Scenario:3)
+import numpy as np
+import pandas as pd
+from sklearn.metrics import precision_score,recall_score,f1_score
+from sklearn.model_selection import train_test_split
+from scipy.spatial.distance import cosine
+data = pd.DataFrame({
+    'user_id':[1,1,1,2,2,3,3,3,4,4],
+    'item_id':[1,2,3,1,3,1,2,3,1,4],
+    'rating': [5,4,3,5,4,4,5,3,2,4]
+})
+user_item_matrix = data.pivot(index='user_id',columns='item_id',values='rating')
+similarity_matrix = pd.DataFrame(1 - cosine(user_item_matrix,user_item_matrix),index=user_item_matrix.index,columns=user_item_matrix.index)
+
+#Recommend function
+def recommend(user_id,k=2):
+  similar_users =similarity_matrix[user_id].sort_values(ascending=False)[1:k+1].index
+  similar_users_ratings = user_item_matrix.loc[similar_users]
+  recommendation_scores = similar_users_ratings.mean(axis=0).sort_values(ascending=False)
+  user_rated_items = user_item_matrix.loc[user_id][user_item_matrix.loc[user_id]>0].index
+  recommendations = recommendation_scores.drop(user_rated_items)
+
+  return recommendations.index.tolist()
+
+#Train and Test Data
+train,test = train_test_split(data,test_size=0.2,random_state=42)
+
+user_item_matrix_train = train.pivot(index='user_id',columns='item_id',values='rating').fillna(0)
+user_item_matrix_test = test.pivot(index='user_id',columns='item_id',values='rating').fillna(0)
+
+similarity_matrix_train = pd.DataFrame(1-cosine(user_item_matrix_train,user_item_matrix_train),index = user_item_matrix_train.index,columns = user_item_matrix_train.index)
+
+#Evaluation of System
+precision_list = []
+recall_list = []
+f1_list = []
+for user_id in user_item_matrix_test.index:
+  actual_items = user_items_matrix_test.loc[user_id][user_item_matrix_test.loc[user_id]>0],index.tolist()
+  predicted_items = recommend(user_id)
+
+  if predicted_item:
+    y_true = [1 if item in actual_items else 0 for item in predicted_items]
+    y_pred = [1]*len(predicted_items)
+
+    precision_list.append(precision_score(y_true,y_pred))
+    recall_list.append(recall_score(y_true,y_pred))
+    f1_list.append(f1_score(y_ture,y_pred))
+
+
+avg_precision = np.mean(precision_list)
+avg_recall = np.mean(recall_list)
+avg_f1 = np.mean(f1_score)
+
+print(f'Precision: {avg_precision: .2f}')
+print(f'Recall: {avg_recall: .2f}')
+print(f'F1 Score: {avg_f1: .2f}')
